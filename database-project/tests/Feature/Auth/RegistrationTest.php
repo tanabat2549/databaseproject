@@ -38,4 +38,30 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
     }
+
+    public function test_new_users_can_register_with_a_phone_number(): void
+    {
+        $this->post(route('register.store'), [
+            'name' => 'John Doe',
+            'email' => 'test@example.com',
+            'phone' => '0812345678',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('user_phones', ['phone_no' => '0812345678']);
+    }
+
+    public function test_registration_rejects_an_invalid_phone_number(): void
+    {
+        $this->post(route('register.store'), [
+            'name' => 'John Doe',
+            'email' => 'test@example.com',
+            'phone' => '12345',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertSessionHasErrors('phone');
+
+        $this->assertGuest();
+    }
 }
