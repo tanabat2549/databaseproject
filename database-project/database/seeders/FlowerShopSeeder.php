@@ -1,4 +1,4 @@
- <?php
+<?php
 
 namespace Database\Seeders;
 
@@ -49,25 +49,25 @@ class FlowerShopSeeder extends Seeder
 
         // Products, keyed by name
         $products = collect([
-            ['Red Rose Bouquet', 'bouquet', 'A dozen fresh red roses, wrapped in kraft paper.', 890, 30],
-            ['Pastel Mixed Bouquet', 'bouquet', 'Soft pink and white blooms with eucalyptus.', 650, 25],
-            ['Sunflower Bouquet', 'bouquet', 'Bright sunflowers to make any day happier.', 590, 20],
-            ['Tulip Bouquet', 'bouquet', 'Ten Dutch tulips in spring colours.', 720, 15],
-            ['Single Red Rose', 'single', 'One long-stemmed red rose.', 79, 100],
-            ['Single Sunflower', 'single', 'One large sunflower.', 59, 80],
-            ['Single White Lily', 'single', 'A fragrant white lily stem.', 89, 60],
-            ['Potted Orchid', 'potted', 'Phalaenopsis orchid in a ceramic pot.', 450, 18],
-            ['Potted Lavender', 'potted', 'Lavender plant in a terracotta pot.', 250, 22],
-            ['Mini Cactus Set', 'potted', 'Set of three mini cacti.', 199, 40],
-            ['Eucalyptus Wreath', 'wreath', 'Handmade eucalyptus door wreath.', 790, 10],
-            ['Dried Flower Wreath', 'wreath', 'Long-lasting dried flower wreath.', 950, 8],
+            ['Red Rose Bouquet', 'bouquet', 'A dozen fresh red roses, wrapped in kraft paper.', 890, 30,'https://cdn.shopify.com/s/files/1/0507/3754/5401/files/FE81_LAY_preset_ftd-mx-hero-lv-lay.jpg?v=1724708935'],
+            ['Pastel Mixed Bouquet', 'bouquet', 'Soft pink and white blooms with eucalyptus.', 650, 25, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwhvCzh1_d_0yWR6zl7U9cLjVGfg65Xs8krRpx9_1lAk-LIlwVbU0pd0UV&s=10'],
+            ['Sunflower Bouquet', 'bouquet', 'Bright sunflowers to make any day happier.', 590, 20, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyHuUWfyworOMt7UHEIVB4pQJ86DfPnh_0W5yz2sbP0DcBkLT72gRnTgQ&s=10'],
+            ['Tulip Bouquet', 'bouquet', 'Ten Dutch tulips in spring colours.', 720, 15, 'https://www.glasshouseflorist.com/905-superlarge_default/rainbow-tulips-bouquet-round.jpg'],
+            ['Single Red Rose', 'single', 'One long-stemmed red rose.', 79, 100, 'https://instamart-media-assets.swiggy.com/swiggy/image/upload/fl_lossy,f_auto,q_auto/NI_CATALOG/IMAGES/CIW/2024/12/18/86d6b10f-4b46-4212-a788-85c58c6f82ff_9540_2.png'],
+            ['Single Sunflower', 'single', 'One large sunflower.', 59, 80, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndfWHaO0I1bm09PXc-cbQlPFbMz-I-FbJYaAxlnxvWkO_hECrgqapvxE&s=10'],
+            ['Single White Lily', 'single', 'A fragrant white lily stem.', 89, 60, 'https://freshknots.in/wp-content/uploads/2025/09/ElegantLilyWrap2.jpg'],
+            ['Potted Orchid', 'potted', 'Phalaenopsis orchid in a ceramic pot.', 450, 18, 'https://assets.digitalcontent.marksandspencer.app/images/w_2560,q_auto,f_auto/SD_FD_F44A_29126446_NC_X_EC_0/White-Phalaenopsis-Orchid-in-Ceramic-Pot'],
+            ['Potted Lavender', 'potted', 'Lavender plant in a terracotta pot.', 250, 22, 'https://assets.digitalcontent.marksandspencer.app/images/w_2560,q_auto,f_auto/SD_FD_F44A_29527205_NC_X_EC_0/Lavender-Plant-in-Terracotta-Pot'],
+            ['Mini Cactus Set', 'potted', 'Set of three mini cacti.', 199, 40, 'https://urbanjngl.com/cdn/shop/files/Cacti-plants-set-Cactus-with-pot.jpg?v=1770307101'],
+            ['Eucalyptus Wreath', 'wreath', 'Handmade eucalyptus door wreath.', 790, 10, 'https://thebritishcrafthouse.co.uk/wp-content/uploads/2026/07/20260723_190604-scaled.jpg'],
+            ['Dried Flower Wreath', 'wreath', 'Long-lasting dried flower wreath.', 950, 8, 'https://images.urbndata.com/is/image/Anthropologie/101815454_089_b?$a15-pdp-detail-shot$&fit=constrain&qlt=80&wid=640'],
         ])->mapWithKeys(fn ($p) => [$p[0] => Product::create([
             'name' => $p[0],
             'category' => $p[1],
             'description' => $p[2],
             'price' => $p[3],
-            'image' => null,
             'stock' => $p[4],
+            'image' => $p[5] ?? null,
         ])]);
 
         // Carts
