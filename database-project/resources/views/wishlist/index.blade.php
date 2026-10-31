@@ -1,72 +1,53 @@
-<x-layouts::app :title="__('My Wishlist')">
-    <div class="flex w-full flex-col gap-6">
-        <div>
-            <flux:heading size="xl" level="1">{{ __('My Wishlist') }}</flux:heading>
-            <flux:subheading>{{ __('Flowers you saved for later') }}</flux:subheading>
+{{-- Figma: 06 Wishlist. Controller: WishlistController@index ($products with reviews_avg_rating / reviews_count) --}}
+<x-layouts::shop :title="__('My Wishlist')">
+    <div class="flex flex-col gap-10">
+        <div class="flex flex-col gap-5">
+            <div>
+                <x-button variant="outline" size="sm" :href="route('products.index')">← {{ __('Back') }}</x-button>
+            </div>
+
+            <div>
+                <h1 class="font-display text-6xl font-medium tracking-tight lg:text-7xl">{{ __('Wishlist') }}</h1>
+                <p class="mt-2 text-gulu-muted">{{ trans_choice('{0} No saved flowers yet|{1} 1 saved flower|[2,*] :count saved flowers', $products->count()) }}</p>
+            </div>
         </div>
 
-        @if (session('status'))
-            <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300">
-                {{ session('status') }}
+        @if ($products->isEmpty())
+            <div class="flex flex-col items-center gap-5 rounded-3xl bg-gulu-mist px-6 py-20 text-center">
+                <flux:icon.heart class="size-10 text-gulu-lilac-deep" />
+                <p class="font-display text-4xl">{{ __('Your wishlist is empty.') }}</p>
+                <p class="text-gulu-muted">{{ __('Tap the heart on any flower to save it for later.') }}</p>
+                <x-button :href="route('products.index')">{{ __('Browse flowers') }}</x-button>
             </div>
-        @endif
+        @else
+            <div class="grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                @foreach ($products as $product)
+                    <div class="flex flex-col gap-4" data-test="wishlist-item">
+                        <x-product-card :product="$product" />
 
-        @if (session('error'))
-            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
-                {{ session('error') }}
-            </div>
-        @endif
+                        <p @class(['text-sm', 'text-gulu-success' => $product->stock > 0, 'text-red-600' => $product->stock < 1])>
+                            {{ $product->stock > 0 ? __('In stock: :n', ['n' => $product->stock]) : __('Out of stock') }}
+                        </p>
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            @forelse ($products as $product)
-                <div class="flex flex-col overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
-                    <a href="{{ route('products.show', $product) }}">
-                        <img src="{{ $product->image }}" alt="{{ $product->name }}" class="aspect-square w-full object-cover bg-zinc-100 dark:bg-zinc-800">
-                    </a>
-
-                    <div class="flex flex-1 flex-col gap-2 p-4">
-                        <a href="{{ route('products.show', $product) }}" class="font-semibold hover:underline">{{ $product->name }}</a>
-
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="font-medium">฿{{ number_format($product->price, 2) }}</span>
-                            <span class="text-zinc-500">
-                                ★ {{ number_format($product->reviews_avg_rating ?? 0, 1) }} ({{ $product->reviews_count }})
-                            </span>
-                        </div>
-
-                        @if ($product->stock > 0)
-                            <span class="text-xs text-green-600 dark:text-green-400">{{ __('In stock: :n', ['n' => $product->stock]) }}</span>
-                        @else
-                            <span class="text-xs text-red-600 dark:text-red-400">{{ __('Out of stock') }}</span>
-                        @endif
-
-                        <div class="mt-auto flex gap-2 pt-2">
+                        <div class="mt-auto flex gap-2.5">
                             <form method="POST" action="{{ route('wishlist.move', $product) }}" class="flex-1">
                                 @csrf
-                                <flux:button type="submit" variant="primary" size="sm" class="w-full" icon="shopping-cart"
-                                             :disabled="$product->stock < 1" data-test="move-to-cart-button">
-                                    {{ __('Move to cart') }}
-                                </flux:button>
+                                <x-button type="submit" size="sm" class="w-full" :disabled="$product->stock < 1" data-test="move-to-cart-button">
+                                    <flux:icon.shopping-bag class="size-4" /> {{ __('Move to cart') }}
+                                </x-button>
                             </form>
 
                             <form method="POST" action="{{ route('wishlist.destroy', $product) }}">
                                 @csrf
                                 @method('DELETE')
-                                <flux:button type="submit" variant="danger" size="sm" icon="trash" data-test="remove-wishlist-button">
-                                    <span class="sr-only">{{ __('Remove') }}</span>
-                                </flux:button>
+                                <x-button type="submit" variant="outline" size="sm" data-test="remove-wishlist-button" aria-label="{{ __('Remove') }}">
+                                    <flux:icon.trash class="size-4" /> {{ __('Remove') }}
+                                </x-button>
                             </form>
                         </div>
                     </div>
-                </div>
-            @empty
-                <div class="col-span-full rounded-xl border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700">
-                    <flux:text>{{ __('Your wishlist is empty.') }}</flux:text>
-                    <flux:button :href="route('products.index')" variant="primary" class="mt-4">
-                        {{ __('Browse flowers') }}
-                    </flux:button>
-                </div>
-            @endforelse
-        </div>
+                @endforeach
+            </div>
+        @endif
     </div>
-</x-layouts::app>
+</x-layouts::shop>
