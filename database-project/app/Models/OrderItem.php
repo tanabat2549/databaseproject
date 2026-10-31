@@ -30,6 +30,9 @@ class OrderItem extends Model
         return $this->belongsTo(Order::class, 'order_id');
     }
 
+    /**
+     * withTrashed: ประวัติออเดอร์ยังเห็นสินค้าที่ถูกลบ (soft delete) แล้ว
+     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
@@ -37,6 +40,6 @@ class OrderItem extends Model
 
     public function getSubtotalAttribute(): float
     {
-        return (float) $this->unit_price * $this->quantity;
+        return (float) bcmul((string) $this->unit_price, (string) $this->quantity, 2);
     }
 }

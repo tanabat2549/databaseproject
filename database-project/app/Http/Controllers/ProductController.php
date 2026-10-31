@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -13,6 +14,14 @@ class ProductController extends Controller
      */
     public function index(Request $request): View
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'category' => ['nullable', 'string', 'max:20'],
+            'min_price' => ['nullable', 'numeric', 'min:0'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
+            'sort' => ['nullable', 'string', 'max:20'],
+        ]);
+
         $search = $request->query('search');
         $category = $request->query('category', 'all');
         $minPrice = $request->filled('min_price') ? (float) $request->query('min_price') : null;
@@ -20,7 +29,11 @@ class ProductController extends Controller
         $sort = $request->query('sort', 'latest');
         $inStockOnly = $request->boolean('in_stock');
 
-        // Base query with average ratings and review counts
+        // ถ้าผู้ใช้กรอกต่ำสุดมากกว่าสูงสุด ให้สลับค่าให้อัตโนมัติ
+        if ($minPrice !== null && $maxPrice !== null && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
+
         $query = Product::query()
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
@@ -35,16 +48,20 @@ class ProductController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
 
-        // Calculate count per category for filter pills
+        // นับต่อหมวดด้วย query เดียว
+        $counts = Product::query()
+            ->selectRaw('category, count(*) as c')
+            ->groupBy('category')
+            ->pluck('c', 'category');
+
         $categoryCounts = [
-            'all' => Product::count(),
-            'bouquet' => Product::where('category', 'bouquet')->count(),
-            'single' => Product::where('category', 'single')->count(),
-            'potted' => Product::where('category', 'potted')->count(),
-            'wreath' => Product::where('category', 'wreath')->count(),
+            'all' => (int) $counts->sum(),
+            'bouquet' => (int) ($counts['bouquet'] ?? 0),
+            'single' => (int) ($counts['single'] ?? 0),
+            'potted' => (int) ($counts['potted'] ?? 0),
+            'wreath' => (int) ($counts['wreath'] ?? 0),
         ];
 
-        // Overall price boundary in catalog
         $priceRange = [
             'min' => (float) (Product::min('price') ?? 0),
             'max' => (float) (Product::max('price') ?? 1000),
@@ -68,7 +85,6 @@ class ProductController extends Controller
      */
     public function show(Product $product): View
     {
-        // Load reviews with user info, sorted newest first
         $product->load([
             'reviews' => function ($q) {
                 $q->with('user')->latest();
@@ -77,10 +93,8 @@ class ProductController extends Controller
         $product->loadAvg('reviews', 'rating');
         $product->loadCount('reviews');
 
-        // Rating breakdown for star distribution bars
         $ratingBreakdown = $product->ratingBreakdown();
 
-        // Related flowers from the same category
         $relatedProducts = Product::query()
             ->where('category', $product->category)
             ->where('id', '!=', $product->id)
@@ -90,7 +104,6 @@ class ProductController extends Controller
             ->limit(4)
             ->get();
 
-        // Determine if current authenticated user is eligible to review
         $canReview = false;
         $hasReviewed = false;
 
@@ -99,9 +112,9 @@ class ProductController extends Controller
 
             $hasReviewed = $product->reviews->contains('uid', $user->id);
 
-            if (!$hasReviewed) {
+            if (! $hasReviewed) {
                 // Must have a delivered order containing this product
-                $canReview = \Illuminate\Support\Facades\DB::table('orders')
+                $canReview = DB::table('orders')
                     ->join('order_items', 'orders.id', '=', 'order_items.order_id')
                     ->where('orders.uid', $user->id)
                     ->where('orders.status', 'delivered')

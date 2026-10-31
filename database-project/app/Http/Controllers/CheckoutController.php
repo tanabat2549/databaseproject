@@ -18,40 +18,32 @@ class CheckoutController extends Controller
      */
     public function index(): View|RedirectResponse
     {
-        $user = Auth::user();
-        $cartItems = $user->cartItems()
+        $cartItems = Auth::user()->cartItems()
             ->with('product')
             ->get();
 
-        // 1. Guard against empty cart
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')
                 ->with('error', 'ไม่มีสินค้าในตะกร้า ไม่สามารถดำเนินการชำระเงินได้');
         }
 
-        // 2. Guard against out-of-stock items currently in cart
-        $hasStockIssues = $cartItems->contains(function (CartItem $item) {
-            return ! $item->product || $item->product->stock < $item->quantity;
-        });
+        $hasStockIssues = $cartItems->contains(fn (CartItem $item) => $item->has_stock_issue);
 
         if ($hasStockIssues) {
             return redirect()->route('cart.index')
                 ->with('error', 'มีสินค้าในตะกร้าหมดสต็อกหรือสต็อกไม่เพียงพอ กรุณาปรับปรุงรายการก่อนทำการสั่งซื้อ');
         }
 
-        $totalAmount = $cartItems->sum(function (CartItem $item) {
-            return $item->subtotal;
-        });
+        $totalAmount = CartItem::totalFor($cartItems);
 
         return view('checkout.index', compact('cartItems', 'totalAmount'));
     }
 
     /**
-     * Process checkout with Concurrency Protection (Pessimistic Locking & DB Transaction).
+     * Process checkout: DB transaction + pessimistic locks (ordered, deadlock-safe, retried).
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Validate Form Inputs
         $validated = $request->validate([
             'shipping_address' => ['required', 'string', 'min:5', 'max:500'],
             'delivery_date' => ['required', 'date', 'after_or_equal:today'],
@@ -65,43 +57,53 @@ class CheckoutController extends Controller
         $userId = Auth::id();
 
         try {
-            // 2. Wrap all database operations in a Transaction
+            // retry 3 ครั้งเมื่อเจอ deadlock
             $order = DB::transaction(function () use ($validated, $userId) {
-                // Fetch user's cart items
-                $cartItems = CartItem::where('uid', $userId)->get();
+                // 1. ล็อกตะกร้าของ user (กันกดซ้ำ: request ที่สองจะรอแล้วเจอตะกร้าว่าง)
+                $cartItems = CartItem::where('uid', $userId)
+                    ->orderBy('product_id')
+                    ->lockForUpdate()
+                    ->get();
 
                 if ($cartItems->isEmpty()) {
-                    throw new \RuntimeException('ไม่มีสินค้าในตะกร้า ไม่สามารถสั่งซื้อได้');
+                    throw new \DomainException('empty-cart');
                 }
 
-                $orderItemsData = [];
-                $totalAmount = 0.0;
+                // 2. ล็อกสินค้าทั้งหมดในคำสั่งเดียว เรียงตาม id เสมอ (กัน deadlock)
+                $products = Product::whereIn('id', $cartItems->pluck('product_id'))
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
 
-                // 3. Concurrency Protection: Lock rows in database (SELECT ... FOR UPDATE)
+                $orderItemsData = [];
+                $totalAmount = '0.00';
+
                 foreach ($cartItems as $cartItem) {
-                    $product = Product::where('id', $cartItem->product_id)
-                        ->lockForUpdate()
-                        ->first();
+                    if ($cartItem->quantity <= 0) {
+                        throw new \RuntimeException('จำนวนสินค้าในตะกร้าไม่ถูกต้อง');
+                    }
+
+                    $product = $products->get($cartItem->product_id);
 
                     if (! $product) {
                         throw new \RuntimeException("ไม่พบข้อมูลสินค้า ID #{$cartItem->product_id} ในระบบ");
                     }
 
-                    // Strict stock check on locked product
                     if ($product->stock < $cartItem->quantity) {
                         if ($product->stock <= 0) {
                             throw new \RuntimeException("ขออภัย สินค้า '{$product->name}' หมดแล้วในขณะนี้ (มีผู้สั่งซื้อสินค้าชิ้นนี้ไปก่อนหน้า)");
-                        } else {
-                            throw new \RuntimeException("ขออภัย สินค้า '{$product->name}' เหลือสต็อกเพียง {$product->stock} ชิ้น ไม่เพียงพอกับจำนวนที่ต้องการ ({$cartItem->quantity} ชิ้น)");
                         }
+
+                        throw new \RuntimeException("ขออภัย สินค้า '{$product->name}' เหลือสต็อกเพียง {$product->stock} ชิ้น ไม่เพียงพอกับจำนวนที่ต้องการ ({$cartItem->quantity} ชิ้น)");
                     }
 
-                    // 4. Deduct stock from products table
                     $product->decrement('stock', $cartItem->quantity);
 
-                    $unitPrice = (float) $product->price;
-                    $subtotal = $unitPrice * $cartItem->quantity;
-                    $totalAmount += $subtotal;
+                    // คำนวณด้วย bcmath (ไม่มี float error)
+                    $unitPrice = (string) $product->price;
+                    $subtotal = bcmul($unitPrice, (string) $cartItem->quantity, 2);
+                    $totalAmount = bcadd($totalAmount, $subtotal, 2);
 
                     $orderItemsData[] = [
                         'product_id' => $product->id,
@@ -110,7 +112,6 @@ class CheckoutController extends Controller
                     ];
                 }
 
-                // 5. Create Order with initial status: 'pending'
                 $order = Order::create([
                     'uid' => $userId,
                     'shipping_address' => $validated['shipping_address'],
@@ -119,25 +120,29 @@ class CheckoutController extends Controller
                     'status' => Order::STATUS_PENDING,
                 ]);
 
-                // 6. Create OrderItems (freezing unit_price)
                 foreach ($orderItemsData as $itemData) {
                     $order->items()->create($itemData);
                 }
 
-                // 7. Clear user's cart items
                 CartItem::where('uid', $userId)->delete();
 
                 return $order;
-            });
+            }, 3);
 
-            // 8. Redirect to Person 4's order details view
             return redirect()->route('orders.show', $order->id)
                 ->with('status', "สั่งซื้อสำเร็จ! คำสั่งซื้อ #{$order->id} ได้รับการบันทึกแล้ว สถานะ: รอจัดส่ง (Pending)");
-
+        } catch (\DomainException $e) {
+            // ตะกร้าว่าง: อาจเป็นเพราะเพิ่งกดสั่งซื้อไปแล้ว (double submit) จึงพาไปดูประวัติคำสั่งซื้อ
+            return redirect()->route('orders.index')
+                ->with('error', 'ไม่มีสินค้าในตะกร้า หากเพิ่งกดสั่งซื้อ กรุณาตรวจสอบในประวัติคำสั่งซื้อ');
+        } catch (\RuntimeException $e) {
+            // ข้อความที่เราตั้งเองเท่านั้นที่แสดงให้ผู้ใช้
+            return redirect()->route('cart.index')->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            // Any failure rolls back the transaction automatically
+            report($e);
+
             return redirect()->route('cart.index')
-                ->with('error', $e->getMessage());
+                ->with('error', 'เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง');
         }
     }
 }

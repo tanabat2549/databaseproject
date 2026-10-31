@@ -43,33 +43,21 @@ class Product extends Model
     /*                                RELATIONSHIPS                               */
     /* -------------------------------------------------------------------------- */
 
-    /**
-     * Reviews left by customers for this product.
-     */
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class, 'product_id');
     }
 
-    /**
-     * Cart items referencing this product.
-     */
     public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class, 'product_id');
     }
 
-    /**
-     * Order items referencing this product.
-     */
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'product_id');
     }
 
-    /**
-     * Users who added this product to their wishlist.
-     */
     public function favoritedByUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'wishlists', 'product_id', 'uid')
@@ -93,7 +81,7 @@ class Product extends Model
      */
     public function scopeCategory(Builder $query, ?string $category): Builder
     {
-        if (!empty($category) && $category !== 'all') {
+        if (! empty($category) && $category !== 'all') {
             return $query->where('category', $category);
         }
 
@@ -102,18 +90,23 @@ class Product extends Model
 
     /**
      * Scope a query to search by name or description.
+     * escape ตัวอักษร wildcard (% และ _) เพื่อให้ค้นหาเป็นข้อความตรงตัว
      */
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        if (!empty($term)) {
-            $wildcard = '%' . trim($term) . '%';
-            return $query->where(function (Builder $q) use ($wildcard) {
-                $q->where('name', 'like', $wildcard)
-                  ->orWhere('description', 'like', $wildcard);
-            });
+        $term = trim((string) $term);
+
+        if ($term === '') {
+            return $query;
         }
 
-        return $query;
+        $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term);
+        $wildcard = "%{$escaped}%";
+
+        return $query->where(function (Builder $q) use ($wildcard) {
+            $q->whereRaw("name like ? escape '!'", [$wildcard])
+                ->orWhereRaw("description like ? escape '!'", [$wildcard]);
+        });
     }
 
     /**
@@ -121,6 +114,10 @@ class Product extends Model
      */
     public function scopePriceRange(Builder $query, ?float $minPrice, ?float $maxPrice): Builder
     {
+        if ($minPrice !== null && $maxPrice !== null && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
+
         if ($minPrice !== null && $minPrice > 0) {
             $query->where('price', '>=', $minPrice);
         }
@@ -134,13 +131,14 @@ class Product extends Model
 
     /**
      * Scope a query to sort products.
+     * หมายเหตุ: 'rating' ต้องการ reviews_avg_rating ซึ่ง ProductController เรียก withAvg ไว้แล้ว
      */
     public function scopeSorted(Builder $query, ?string $sort): Builder
     {
         return match ($sort) {
             'price_asc' => $query->orderBy('price', 'asc'),
             'price_desc' => $query->orderBy('price', 'desc'),
-            'rating' => $query->withAvg('reviews', 'rating')->orderByDesc('reviews_avg_rating'),
+            'rating' => $query->orderByDesc('reviews_avg_rating'),
             'name_asc' => $query->orderBy('name', 'asc'),
             'latest' => $query->orderByDesc('created_at'),
             default => $query->orderByDesc('id'),
@@ -151,17 +149,11 @@ class Product extends Model
     /*                               HELPER METHODS                               */
     /* -------------------------------------------------------------------------- */
 
-    /**
-     * Check if product has enough stock.
-     */
     public function hasStock(int $quantity = 1): bool
     {
         return $this->stock >= $quantity;
     }
 
-    /**
-     * Calculate average star rating (rounded to 1 decimal).
-     */
     public function averageRating(): float
     {
         if (isset($this->reviews_avg_rating)) {
@@ -171,9 +163,6 @@ class Product extends Model
         return round((float) ($this->reviews()->avg('rating') ?? 0), 1);
     }
 
-    /**
-     * Total review count.
-     */
     public function reviewsCount(): int
     {
         if (isset($this->reviews_count)) {
@@ -214,17 +203,11 @@ class Product extends Model
     /*                                 ACCESSORS                                  */
     /* -------------------------------------------------------------------------- */
 
-    /**
-     * Formatted price string (e.g. ฿890.00).
-     */
     public function getFormattedPriceAttribute(): string
     {
         return '฿' . number_format((float) $this->price, 2);
     }
 
-    /**
-     * Human-readable category label in Thai & English.
-     */
     public function getCategoryLabelAttribute(): string
     {
         return match ($this->category) {
@@ -236,18 +219,14 @@ class Product extends Model
         };
     }
 
-    /**
-     * Get image URL with high-definition fallback based on product name/category.
-     */
     public function getImageUrlAttribute(): string
     {
-        if (!empty($this->image)) {
+        if (! empty($this->image)) {
             return str_starts_with($this->image, 'http')
                 ? $this->image
                 : asset('storage/' . $this->image);
         }
 
-        // Curated elegant flower imagery by product name/category
         return match ($this->name) {
             'Red Rose Bouquet' => 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
             'Pastel Mixed Bouquet' => 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80',

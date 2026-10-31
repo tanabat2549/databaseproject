@@ -46,7 +46,8 @@ class WishlistController extends Controller
     }
 
     /**
-     * Move a wishlist product into the cart (+1 quantity) and remove it from the wishlist.
+     * Move a wishlist product into the cart (+1) and remove it from the wishlist.
+     * จะลบออกจาก wishlist ก็ต่อเมื่อเพิ่มลงตะกร้าสำเร็จเท่านั้น
      */
     public function moveToCart(Product $product): RedirectResponse
     {
@@ -56,18 +57,30 @@ class WishlistController extends Controller
             return back()->with('error', "{$product->name} is out of stock.");
         }
 
-        DB::transaction(function () use ($user, $product) {
-            $item = CartItem::firstOrCreate(
-                ['uid' => $user->id, 'product_id' => $product->id],
-                ['quantity' => 0],
-            );
+        $item = CartItem::createOrFirst(
+            ['uid' => $user->id, 'product_id' => $product->id],
+            ['quantity' => 1],
+        );
 
-            if ($item->quantity < $product->stock) {
-                $item->increment('quantity');
+        if (! $item->wasRecentlyCreated) {
+            $added = DB::transaction(function () use ($item, $product) {
+                $locked = CartItem::whereKey($item->id)->lockForUpdate()->firstOrFail();
+
+                if ($locked->quantity >= $product->stock) {
+                    return false;
+                }
+
+                $locked->increment('quantity');
+
+                return true;
+            });
+
+            if (! $added) {
+                return back()->with('error', "{$product->name}: คุณมีสินค้านี้ในตะกร้าครบตามจำนวนสต็อกแล้ว");
             }
+        }
 
-            $user->wishlist()->detach($product->id);
-        });
+        $user->wishlist()->detach($product->id);
 
         return redirect()->route('wishlist.index')->with('status', "{$product->name} moved to your cart.");
     }
