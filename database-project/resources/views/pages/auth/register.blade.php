@@ -1,79 +1,31 @@
 <x-layouts::auth :title="__('Register')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Create an account')" :description="__('Enter your details below to create your account')" />
+    <x-auth-heading :title="__('สมัครสมาชิก')"
+                    :description="__('Create your gulugule shop account to order flowers, save a wishlist and leave reviews.')" />
 
-        <!-- Session Status -->
-        <x-auth-session-status class="text-center" :status="session('status')" />
+    <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-5">
+        @csrf
 
-        <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-6">
-            @csrf
-            <!-- Name -->
-            <flux:input
-                name="name"
-                :label="__('Name')"
-                :value="old('name')"
-                type="text"
-                required
-                autofocus
-                autocomplete="name"
-                :placeholder="__('Full name')"
-            />
+        <x-form-field name="email" type="email" :label="__('Email')" placeholder="you@example.com"
+                      required autofocus autocomplete="email" />
 
-            <!-- Email Address -->
-            <flux:input
-                name="email"
-                :label="__('Email address')"
-                :value="old('email')"
-                type="email"
-                required
-                autocomplete="email"
-                placeholder="email@example.com"
-            />
+        <x-form-field name="name" :label="__('Nickname')" :placeholder="__('How should we call you?')"
+                      required autocomplete="name" />
 
-            <!-- Phone (optional, more can be added later in Profile) -->
-            <flux:input
-                name="phone"
-                :label="__('Phone number (optional)')"
-                :value="old('phone')"
-                type="tel"
-                autocomplete="tel"
-                placeholder="0812345678"
-            />
+        {{-- Optional: first row of user_phones. More numbers can be added on the Profile page. --}}
+        <x-form-field name="phone" type="tel" :label="__('Phone (optional)')" placeholder="0812345678"
+                      autocomplete="tel" />
 
-            <!-- Password -->
-            <flux:input
-                name="password"
-                :label="__('Password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                :placeholder="__('Password')"
-                passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                viewable
-            />
+        <x-form-field name="password" type="password" :label="__('Password')" placeholder="••••••••"
+                      required autocomplete="new-password" />
 
-            <!-- Confirm Password -->
-            <flux:input
-                name="password_confirmation"
-                :label="__('Confirm password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                :placeholder="__('Confirm password')"
-                passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                viewable
-            />
+        <x-form-field name="password_confirmation" type="password" :label="__('Confirm password')" placeholder="••••••••"
+                      required autocomplete="new-password" />
 
-            <div class="flex items-center justify-end">
-                <flux:button type="submit" variant="primary" class="w-full" data-test="register-user-button">
-                    {{ __('Create account') }}
-                </flux:button>
-            </div>
-        </form>
+        <x-button type="submit" class="w-full" data-test="register-user-button">{{ __('สมัครสมาชิก') }}</x-button>
+    </form>
 
-        <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-            <span>{{ __('Already have an account?') }}</span>
-            <flux:link :href="route('login')" wire:navigate>{{ __('Log in') }}</flux:link>
-        </div>
-    </div>
+    <p class="text-center text-sm text-gulu-muted">
+        {{ __('Already have an account?') }}
+        <a href="{{ route('login') }}" class="font-semibold text-gulu-ink hover:underline">{{ __('เข้าสู่ระบบ') }}</a>
+    </p>
 </x-layouts::auth>

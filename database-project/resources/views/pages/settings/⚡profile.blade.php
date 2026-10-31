@@ -117,51 +117,10 @@ new #[Title('Profile settings')] class extends Component {
             </div>
         </form>
 
-        {{-- Phone numbers (user_phones): normal forms handled by PhoneController --}}
-        @php($phoneErrors = session('errors')?->get('phone_no') ?? [])
-
-        <section class="my-10 w-full space-y-4">
-            <div>
-                <flux:heading>{{ __('Phone numbers') }}</flux:heading>
-                <flux:subheading>{{ __('Add one or more phone numbers we can contact you on') }}</flux:subheading>
-            </div>
-
-            @if (in_array(session('status'), ['Phone number added.', 'Phone number removed.']))
-                <flux:text class="font-medium !dark:text-green-400 !text-green-600">{{ session('status') }}</flux:text>
-            @endif
-
-            <ul class="divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
-                @forelse (auth()->user()->phones as $phone)
-                    <li class="flex items-center justify-between px-4 py-2">
-                        <span>{{ $phone->phone_no }}</span>
-
-                        <form method="POST" action="{{ route('phones.destroy', $phone->phone_no) }}"
-                              onsubmit="return confirm('{{ __('Remove this phone number?') }}')">
-                            @csrf
-                            @method('DELETE')
-                            <flux:button type="submit" variant="danger" size="sm" data-test="delete-phone-button">
-                                {{ __('Remove') }}
-                            </flux:button>
-                        </form>
-                    </li>
-                @empty
-                    <li class="px-4 py-2 text-sm text-zinc-500">{{ __('No phone numbers yet.') }}</li>
-                @endforelse
-            </ul>
-
-            <form method="POST" action="{{ route('phones.store') }}" class="flex items-end gap-2">
-                @csrf
-                <div class="flex-1">
-                    <flux:input name="phone_no" :label="__('New phone number')" type="tel"
-                                :value="old('phone_no')" placeholder="0812345678" required />
-                </div>
-                <flux:button type="submit" variant="primary" data-test="add-phone-button">{{ __('Add') }}</flux:button>
-            </form>
-
-            @foreach ($phoneErrors as $message)
-                <flux:text class="text-sm !text-red-600 !dark:text-red-400">{{ $message }}</flux:text>
-            @endforeach
-        </section>
+        <flux:text class="my-6">
+            {{ __('Phone numbers are managed on your') }}
+            <flux:link :href="route('profile.show')">{{ __('profile page') }}</flux:link>.
+        </flux:text>
 
         @if ($this->showDeleteUser)
             <livewire:pages::settings.delete-user-form />
