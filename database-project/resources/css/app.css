@@ -28,6 +28,24 @@
     --color-accent-foreground: var(--color-white);
 }
 
+/* gulugule shop design tokens — same names as the Figma "Bloom/Colors" variables, prefixed with gulu- */
+@theme {
+    --color-gulu-ink: #1b1020;
+    --color-gulu-plum: #3a1f4d;
+    --color-gulu-lilac: #b79ad6;
+    --color-gulu-lilac-deep: #8e6bbf;
+    --color-gulu-lilac-soft: #ede4f2;
+    --color-gulu-mist: #f6f2f7;
+    --color-gulu-line: #e3dae8;
+    --color-gulu-muted: #756b7e;
+    --color-gulu-rose: #d98fb0;
+    --color-gulu-success: #4e9b7a;
+    --color-gulu-gold: #e8b84a;
+
+    --font-display: 'Cormorant Garamond', 'Pridi', serif;
+    --font-body: 'Sarabun', ui-sans-serif, system-ui, sans-serif;
+}
+
 @layer theme {
     .dark {
         --color-accent: var(--color-white);
