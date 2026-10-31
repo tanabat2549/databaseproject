@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\PhoneController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
     Route::livewire('settings/profile', 'pages::settings.profile')->name('profile.edit');
+
+    // Profile phone numbers (user_phones)
+    Route::post('settings/phones', [PhoneController::class, 'store'])->name('phones.store');
+    Route::delete('settings/phones/{phoneNo}', [PhoneController::class, 'destroy'])->name('phones.destroy');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
