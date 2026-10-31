@@ -21,7 +21,7 @@ class PhoneTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)->post(route('phones.store'), ['phone_no' => '0812345678'])
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('profile.show'));
         $this->actingAs($user)->post(route('phones.store'), ['phone_no' => '0898765432']);
 
         $this->assertSame(2, $user->phones()->count());
@@ -63,7 +63,7 @@ class PhoneTest extends TestCase
         $this->assertSame(1, $owner->phones()->count());
 
         $this->actingAs($owner)->delete(route('phones.destroy', '0812345678'))
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('profile.show'));
         $this->assertSame(0, $owner->phones()->count());
     }
 
@@ -72,7 +72,7 @@ class PhoneTest extends TestCase
         $user = User::factory()->create();
         $user->phones()->create(['phone_no' => '0812345678']);
 
-        $this->actingAs($user)->get(route('profile.edit'))
+        $this->actingAs($user)->get(route('profile.show'))
             ->assertOk()
             ->assertSee('0812345678');
     }

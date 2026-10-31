@@ -47,9 +47,8 @@
                 <a href="{{ route('orders.index') }}" class="flex items-center gap-1.5 hover:underline">
                     <flux:icon.archive-box class="size-5" /><span class="hidden xl:inline">{{ __('Status') }}</span>
                 </a>
-                <a href="{{ route('profile.edit') }}" class="flex items-center gap-1.5 hover:underline">
-                    <flux:icon.user class="size-5" /><span class="hidden xl:inline">{{ __('Profile') }}</span>
-                </a>
+                <x-user-menu />
+
             @else
                 <x-button variant="outline" size="sm" :href="route('login')">{{ __('Log in') }}</x-button>
                 <x-button size="sm" :href="route('register')">{{ __('Sign up') }}</x-button>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PhoneController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
@@ -8,7 +9,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::livewire('settings/profile', 'pages::settings.profile')->name('profile.edit');
 
-    // Profile phone numbers (user_phones)
+    // Member info page (storefront) + phone numbers (user_phones)
+    Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('settings/phones', [PhoneController::class, 'store'])->name('phones.store');
     Route::delete('settings/phones/{phoneNo}', [PhoneController::class, 'destroy'])->name('phones.destroy');
 });

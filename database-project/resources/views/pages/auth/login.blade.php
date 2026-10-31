@@ -1,59 +1,34 @@
 <x-layouts::auth :title="__('Log in')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+    <x-auth-heading :title="__('เข้าสู่ระบบ')" :description="__('Welcome back. Sign in to continue your order.')" />
 
-        <!-- Session Status -->
-        <x-auth-session-status class="text-center" :status="session('status')" />
+    <x-passkey-verify />
 
-        <x-passkey-verify />
+    <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-5">
+        @csrf
 
-        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
-            @csrf
+        <x-form-field name="email" type="email" :label="__('Email')" placeholder="you@example.com"
+                      required autofocus autocomplete="email" />
 
-            <!-- Email Address -->
-            <flux:input
-                name="email"
-                :label="__('Email address')"
-                :value="old('email')"
-                type="email"
-                required
-                autofocus
-                autocomplete="email"
-                placeholder="email@example.com"
-            />
+        <x-form-field name="password" type="password" :label="__('Password')" placeholder="••••••••"
+                      required autocomplete="current-password" />
 
-            <!-- Password -->
-            <div class="relative">
-                <flux:input
-                    name="password"
-                    :label="__('Password')"
-                    type="password"
-                    required
-                    autocomplete="current-password"
-                    :placeholder="__('Password')"
-                    viewable
-                />
+        <div class="flex items-center justify-between text-sm">
+            <label class="flex items-center gap-2 text-gulu-muted">
+                <input type="checkbox" name="remember" value="1" @checked(old('remember'))
+                       class="size-4 rounded border-gulu-line accent-gulu-ink">
+                {{ __('Remember me') }}
+            </label>
 
-                @if (Route::has('password.request'))
-                    <flux:link class="absolute top-0 text-sm end-0" :href="route('password.request')" wire:navigate>
-                        {{ __('Forgot your password?') }}
-                    </flux:link>
-                @endif
-            </div>
-
-            <!-- Remember Me -->
-            <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
-
-            <div class="flex items-center justify-end">
-                <flux:button variant="primary" type="submit" class="w-full" data-test="login-button">
-                    {{ __('Log in') }}
-                </flux:button>
-            </div>
-        </form>
-
-        <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
-            <span>{{ __('Don\'t have an account?') }}</span>
-            <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
+            @if (Route::has('password.request'))
+                <a href="{{ route('password.request') }}" class="font-medium hover:underline">{{ __('Forgot password?') }}</a>
+            @endif
         </div>
-    </div>
+
+        <x-button type="submit" class="w-full" data-test="login-button">{{ __('เข้าสู่ระบบ') }}</x-button>
+    </form>
+
+    <p class="text-center text-sm text-gulu-muted">
+        {{ __('New to gulugule shop?') }}
+        <a href="{{ route('register') }}" class="font-semibold text-gulu-ink hover:underline">{{ __('สมัครสมาชิก') }}</a>
+    </p>
 </x-layouts::auth>

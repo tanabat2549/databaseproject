@@ -28,7 +28,7 @@ class PhoneController extends Controller
 
         Auth::user()->phones()->create($data);
 
-        return redirect()->route('profile.edit')->with('status', 'Phone number added.');
+        return redirect()->route('profile.show')->with('status', 'Phone number added.');
     }
 
     /**
@@ -38,6 +38,6 @@ class PhoneController extends Controller
     {
         Auth::user()->phones()->where('phone_no', $phoneNo)->delete();
 
-        return redirect()->route('profile.edit')->with('status', 'Phone number removed.');
+        return redirect()->route('profile.show')->with('status', 'Phone number removed.');
     }
 }

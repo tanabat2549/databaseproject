@@ -15,7 +15,7 @@
                 <div class="flex flex-col gap-3">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gulu-lilac">{{ __('Account') }}</p>
                     @auth
-                        <a href="{{ route('profile.edit') }}" class="hover:underline">{{ __('Profile') }}</a>
+                        <a href="{{ route('profile.show') }}" class="hover:underline">{{ __('Profile') }}</a>
                         <a href="{{ route('orders.index') }}" class="hover:underline">{{ __('Orders') }}</a>
                         <a href="{{ route('wishlist.index') }}" class="hover:underline">{{ __('Wishlist') }}</a>
                     @else
