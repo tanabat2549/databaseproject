@@ -15,6 +15,12 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="shopping-bag" :href="route('products.index')" :current="request()->routeIs('products.*')">
+                        {{ __('Shop flowers') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="heart" :href="route('wishlist.index')" :current="request()->routeIs('wishlist.*')">
+                        {{ __('My Wishlist') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 

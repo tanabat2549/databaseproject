@@ -13,6 +13,12 @@
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:navbar.item>
+                <flux:navbar.item icon="shopping-bag" :href="route('products.index')" :current="request()->routeIs('products.*')">
+                    {{ __('Shop flowers') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="heart" :href="route('wishlist.index')" :current="request()->routeIs('wishlist.*')">
+                    {{ __('My Wishlist') }}
+                </flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />

@@ -1,7 +1,7 @@
 <?php
 
 use App\Concerns\ProfileValidationRules;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+//use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -116,6 +116,11 @@ new #[Title('Profile settings')] class extends Component {
 
             </div>
         </form>
+
+        <flux:text class="my-6">
+            {{ __('Phone numbers are managed on your') }}
+            <flux:link :href="route('profile.show')">{{ __('profile page') }}</flux:link>.
+        </flux:text>
 
         @if ($this->showDeleteUser)
             <livewire:pages::settings.delete-user-form />
