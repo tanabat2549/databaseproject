@@ -12,6 +12,7 @@ class OrderController extends Controller
     public function index()
     {
         $orders = Order::where('uid', Auth::id())
+            ->with('items.product')
             ->withCount('items')
             ->latest()
             ->get();

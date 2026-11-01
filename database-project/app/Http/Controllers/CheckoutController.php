@@ -35,8 +35,9 @@ class CheckoutController extends Controller
         }
 
         $totalAmount = CartItem::totalFor($cartItems);
+        $phones = Auth::user()->phones()->pluck('phone_no');
 
-        return view('checkout.index', compact('cartItems', 'totalAmount'));
+        return view('checkout.index', compact('cartItems', 'totalAmount', 'phones'));
     }
 
     /**
@@ -47,6 +48,7 @@ class CheckoutController extends Controller
         $validated = $request->validate([
             'shipping_address' => ['required', 'string', 'min:5', 'max:500'],
             'delivery_date' => ['required', 'date', 'after_or_equal:today'],
+            'phone_no' => ['nullable', 'string', 'max:30'],
         ], [
             'shipping_address.required' => 'กรุณากรอกที่อยู่สำหรับจัดส่งดอกไม้',
             'shipping_address.min' => 'ที่อยู่จัดส่งต้องมีความยาวอย่างน้อย 5 ตัวอักษร',
