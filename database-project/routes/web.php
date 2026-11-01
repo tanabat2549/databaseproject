@@ -8,6 +8,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\DiscoverController;
 
 // Public catalog routes (Accessible to both guests and members)
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -42,6 +43,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])
         ->middleware('throttle:10,1')->name('checkout.store');
+
+    // Discover (swipe)
+    Route::get('/discover', [DiscoverController::class, 'index'])->name('discover.index');
+    Route::post('/discover/{product}/swipe', [DiscoverController::class, 'swipe'])
+        ->middleware('throttle:120,1')->name('discover.swipe');
+    Route::post('/discover/reset', [DiscoverController::class, 'reset'])->name('discover.reset');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
