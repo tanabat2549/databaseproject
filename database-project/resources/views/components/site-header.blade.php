@@ -13,9 +13,9 @@
 @endphp
 
 <header class="sticky top-0 z-40 bg-white">
-    <div class="bg-gulu-ink py-2.5 text-center text-xs font-medium uppercase tracking-[0.2em] text-white">
+    <!-- <div class="bg-gulu-ink py-2.5 text-center text-xs font-medium uppercase tracking-[0.2em] text-white">
         {{ __('Free delivery on orders over ฿1,500') }} · {{ __('Fresh-cut daily') }}
-    </div>
+    </div> -->
 
     <nav class="mx-auto flex max-w-[1440px] items-center justify-between gap-6 border-b border-gulu-line px-6 py-4 lg:px-12" aria-label="{{ __('Main') }}">
         <a href="{{ route('home') }}" class="font-display text-[34px] font-semibold leading-none tracking-tight">gulugule shop</a>
