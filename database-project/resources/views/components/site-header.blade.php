@@ -27,6 +27,17 @@
                        @class(['hover:underline', 'underline underline-offset-8' => request('category') === $category])>{{ $label }}</a>
                 </li>
             @endforeach
+
+            {{-- Discover (swipe) --}}
+            <li>
+                <a href="{{ auth()->check() ? route('discover.index') : route('login') }}"
+                @class([
+                    'inline-flex items-center gap-1.5 rounded-full bg-gulu-ink px-4 py-1.5 text-sm text-white transition hover:bg-gulu-plum',
+                    'ring-2 ring-gulu-lilac-deep' => request()->routeIs('discover.*'),
+                ])>
+                    <flux:icon.sparkles class="size-4" />{{ __('Discover') }}
+                </a>
+            </li>
         </ul>
 
         <div class="flex items-center gap-5 text-sm">
@@ -38,6 +49,11 @@
                 <a href="{{ route('wishlist.index') }}" class="flex items-center gap-1.5 hover:underline">
                     <flux:icon.heart class="size-5" /><span class="hidden xl:inline">{{ __('Wishlist') }}</span>
                 </a>
+
+                <a href="{{ route('discover.index') }}" class="flex items-center gap-1.5 hover:underline lg:hidden" aria-label="{{ __('Discover') }}">
+                    <flux:icon.sparkles class="size-5" />
+                </a>
+
                 <a href="{{ route('cart.index') }}" class="relative flex items-center gap-1.5 hover:underline">
                     <flux:icon.shopping-bag class="size-5" /><span class="hidden xl:inline">{{ __('Cart') }}</span>
                     @if ($cartCount > 0)
