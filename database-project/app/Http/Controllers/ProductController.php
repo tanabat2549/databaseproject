@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -83,52 +85,44 @@ class ProductController extends Controller
     /**
      * Display the specified product detail page with ratings and reviews.
      */
-    public function show(Product $product): View
-    {
-        $product->load([
-            'reviews' => function ($q) {
-                $q->with('user')->latest();
-            },
-        ]);
-        $product->loadAvg('reviews', 'rating');
-        $product->loadCount('reviews');
+    public function show(Product $product)
+{
+    // reviews with author, newest first; avg/count feed Product::averageRating()/reviewsCount()
+    $product->load(['reviews' => fn ($q) => $q->with('user')->latest()])
+        ->loadCount('reviews')
+        ->loadAvg('reviews', 'rating');
 
-        $ratingBreakdown = $product->ratingBreakdown();
+    $ratingBreakdown = $product->ratingBreakdown();
 
-        $relatedProducts = Product::query()
-            ->where('category', $product->category)
-            ->where('id', '!=', $product->id)
-            ->withAvg('reviews', 'rating')
-            ->withCount('reviews')
-            ->inStock()
-            ->limit(4)
-            ->get();
+    $hasReviewed = false;
+    $hasReceived = false;
 
-        $canReview = false;
-        $hasReviewed = false;
+    if (Auth::check()) {
+        $uid = Auth::id();
 
-        if (auth()->check()) {
-            $user = auth()->user();
+        $hasReviewed = Review::where('uid', $uid)
+            ->where('product_id', $product->id)
+            ->exists();
 
-            $hasReviewed = $product->reviews->contains('uid', $user->id);
-
-            if (! $hasReviewed) {
-                // Must have a delivered order containing this product
-                $canReview = DB::table('orders')
-                    ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-                    ->where('orders.uid', $user->id)
-                    ->where('orders.status', 'delivered')
-                    ->where('order_items.product_id', $product->id)
-                    ->exists();
-            }
-        }
-
-        return view('products.show', [
-            'product' => $product,
-            'ratingBreakdown' => $ratingBreakdown,
-            'relatedProducts' => $relatedProducts,
-            'canReview' => $canReview,
-            'hasReviewed' => $hasReviewed,
-        ]);
+        // only a DELIVERED order that contains this product unlocks the review form
+        $hasReceived = DB::table('orders')
+            ->join('order_items', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.uid', $uid)
+            ->where('orders.status', 'delivered')
+            ->where('order_items.product_id', $product->id)
+            ->exists();
     }
+
+    $canReview = $hasReceived && ! $hasReviewed;
+
+    $relatedProducts = Product::where('id', '!=', $product->id)
+        ->where('category', $product->category)
+        ->inRandomOrder()
+        ->take(4)
+        ->get();
+
+    return view('products.show', compact(
+        'product', 'ratingBreakdown', 'canReview', 'hasReviewed', 'relatedProducts'
+    ));
+}
 }
